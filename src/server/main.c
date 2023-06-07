@@ -11,7 +11,7 @@ void *wait_child(void *arg) {
     exit(0);
 }
 
-void proxy_event_loop(int client, int pipe, int pid) {
+void overmind(int client, int pipe, int pid) {
     char buffer[4096];
     int res;
     while (1) {
@@ -22,7 +22,6 @@ void proxy_event_loop(int client, int pipe, int pid) {
             } else if (header == Kill) {
                 kill(pid, SIGKILL);
             }
-            printf("%d\n", header);
             res = recv(client, buffer, header, 0);
             buffer[res] = '\0';
             write(pipe, buffer, res);
@@ -32,8 +31,8 @@ void proxy_event_loop(int client, int pipe, int pid) {
     }
 }
 
-void handle_spawn(int client) {
-    char **argv = unpack(client);
+void spawn_handler(int connection) {
+    char **argv = unpack(connection);
 
     int pipefd[2];
     pipe(pipefd);
@@ -45,19 +44,18 @@ void handle_spawn(int client) {
 
         pthread_t waiting;
         pthread_create(&waiting, NULL, wait_child, &pid);
-        proxy_event_loop(client, pipefd[1], pid);
+        overmind(connection, pipefd[1], pid);
 
-        close(client);
+        close(connection);
         close(pipefd[1]);
         pthread_kill(waiting, SIGKILL);
         pthread_join(waiting, NULL);
         exit(EXIT_SUCCESS);
     } else {
-        fflush(stdout);
         dup2(pipefd[0], STDIN_FILENO);
-        dup2(client, STDOUT_FILENO);
-        close(client);
+        dup2(connection, STDOUT_FILENO);
         close(pipefd[1]);
+        close(connection);
         execvp(argv[0], argv);
         exit(EXIT_FAILURE);
     }
@@ -88,7 +86,7 @@ int main(int argc, char** argv) {
             read(connection, &req_type, sizeof(req_type));
 
             if (req_type == Spawn) {
-                handle_spawn(connection);
+                spawn_handler(connection);
             } else {
                 // coming soon
             }

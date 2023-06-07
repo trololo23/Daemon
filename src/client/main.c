@@ -18,8 +18,7 @@ void *read_input(void *arg) {
         printf("%s", buffer);
     }
 
-    puts("keek");
-    if (res == 0) { 
+    if (!res) { 
         close(connection);
         exit(EXIT_SUCCESS);
     }
