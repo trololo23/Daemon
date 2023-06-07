@@ -9,6 +9,11 @@
 
 static int connection;
 
+void kill_handler(int sig) {
+    int signal = Kill;
+    write(connection, &signal, sizeof(signal));
+}
+
 void *read_input(void *arg) {
     int res;
     char buffer[4096];

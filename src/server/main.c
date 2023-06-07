@@ -71,6 +71,10 @@ int make_me_daemon() {
 }
 
 int main(int argc, char** argv) {
+    // Anti - zombie
+    struct sigaction schld = {.sa_handler = SIG_IGN};
+    sigaction(SIGCHLD, &schld, NULL);
+
     char* port = argv[1];
     int sockfd = create_listener(argv[1]);
     make_me_daemon();
