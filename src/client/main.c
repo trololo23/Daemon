@@ -12,6 +12,7 @@ static int connection;
 void kill_handler(int sig) {
     int signal = Kill;
     write(connection, &signal, sizeof(signal));
+    exit(EXIT_SUCCESS);
 }
 
 void *read_input(void *arg) {
@@ -31,6 +32,15 @@ void *read_input(void *arg) {
 }
 
 int main(int argc, char** argv) {
+    struct sigaction sa = {
+        .sa_handler = kill_handler,
+        .sa_flags = SA_RESTART,
+    };
+
+    if (sigaction(SIGINT, &sa, NULL) == -1) {
+        return EXIT_FAILURE;
+    }
+
     char* host = argv[1];
     char* port = argv[2];
     
